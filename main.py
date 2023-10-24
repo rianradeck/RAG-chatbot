@@ -11,8 +11,6 @@ from langchain.document_loaders import TextLoader
 
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-# if __name__ == '__main__':
-    
 
 encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -22,41 +20,38 @@ def get_tokens(string):
 def tokens_to_str(tokens):
     return [encoding.decode_single_token_bytes(token) for token in tokens]
 
-def get_data_from_txt(path_to_file):
-    f = open(path_to_file, "r", encoding="utf-8")
-    return "".join([line for line in f])
+class RAG():
+    def __init__(self):
+        self.loader = TextLoader("out.txt", encoding='utf-8')
+        self.documents = self.loader.load()
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0, separators=[" ", ",", "\n"])
 
-data = get_data_from_txt("out.txt")
-loader = TextLoader("out.txt", encoding='utf-8')
-documents = loader.load()
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0, separators=[" ", ",", "\n"])
+        self.docs = self.text_splitter.split_documents(self.documents)
+        self.embedding_function = OpenAIEmbeddings()
 
-docs = text_splitter.split_documents(documents)
-embedding_function = OpenAIEmbeddings()
+        self.db = Chroma.from_documents(self.docs, self.embedding_function)
 
-db = Chroma.from_documents(docs, embedding_function)
 
-query = input("Pergunta: ")
-docs = db.similarity_search(query)
+    def get_response(self, query):
+        
+        docs = self.db.similarity_search(query)
 
-# print results
-messages = []
-for doc in docs:
-    messages.append({"role" : "system", "content": doc.page_content})
-messages = messages[::-1]
-messages.append({"role" : "user", "content": query})
+        # print results
+        messages = []
+        for doc in docs:
+            messages.append({"role" : "system", "content": doc.page_content})
+        messages = messages[::-1]
+        messages.append({"role" : "user", "content": query})
 
-print(messages)
+        # print(messages)
 
-completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=messages
-)
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
 
-print(completion.choices[0].message)
+        return (completion.choices[0].message)
 
-# print(docs[0].page_content)
-
-# embeddings = calculate_embeddings(chuncks, recalculate=True)
-
-# print(embeddings)
+if __name__ == "__main__":
+    bot = RAG()
+    print(bot.get_response(input("ask: ")))
