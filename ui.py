@@ -1,13 +1,14 @@
 import streamlit as st
 from main import RAG
 
-bot = RAG()
 
 st.title("RAG Bot")
 
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "bot" not in st.session_state:
+    st.session_state.bot = RAG()
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
@@ -21,7 +22,7 @@ if prompt := st.chat_input("Pergunte algo sobre o vestibular Unicamp 2024"):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    response = str(bot.get_response(prompt).content)
+    response = str(st.session_state.bot.get_response(prompt).content)
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
         st.markdown(response)
