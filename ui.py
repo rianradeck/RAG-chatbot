@@ -1,3 +1,5 @@
+# based on https://docs.streamlit.io/knowledge-base/tutorials/build-conversational-apps
+
 import streamlit as st
 from main import RAG
 
